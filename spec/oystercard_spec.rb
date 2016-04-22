@@ -3,7 +3,8 @@ require 'oystercard'
 
 describe Oystercard do
 
-    let(:station) { double :station }
+    let(:entry_station) { double :station }
+    let(:exit_station) { double :station }
 
     it 'has a zero balance on creation' do
       expect(subject.balance).to eq Oystercard::DEFAULT_BALANCE
@@ -11,6 +12,10 @@ describe Oystercard do
 
     it 'is not in_journey on creation' do
       expect(subject).not_to be_in_journey
+    end
+
+    it 'has no previous journeys on creation' do
+      expect(subject.journeys).to be_empty
     end
 
   describe '#top_up' do
@@ -47,18 +52,18 @@ describe Oystercard do
 
     it 'after touching in, card shows that it is in use' do
       subject.top_up(Oystercard::BALANCE_LIMIT)
-      subject.touch_in(station)
+      subject.touch_in(entry_station)
       expect(subject).to be_in_journey
     end
 
     it 'will not let you touch in if insufficient balance' do
-      expect { subject.touch_in(station) }.to raise_error "You require a min of £#{Oystercard::MINIMUM_FARE} to travel"
+      expect { subject.touch_in(entry_station) }.to raise_error "You require a min of £#{Oystercard::MINIMUM_FARE} to travel"
     end
 
     it 'stores the entry station' do
       subject.top_up(Oystercard::BALANCE_LIMIT)
-      subject.touch_in(station)
-      expect(subject.entry_station).to eq station
+      subject.touch_in(entry_station)
+      expect(subject.entry_station).to eq entry_station
     end
 
   end
@@ -67,23 +72,26 @@ describe Oystercard do
 
     before do
       subject.top_up(Oystercard::BALANCE_LIMIT)
-      subject.touch_in(station)
+      subject.touch_in(entry_station)
+      subject.touch_out(exit_station)
     end
 
     it { is_expected.to respond_to(:touch_out) }
 
     it 'after touching out, card shows it is not in use' do
-      subject.touch_out
       expect(subject).not_to be_in_journey
     end
 
     it 'deducts fare from the balance' do
-      expect { subject.touch_out }.to change{ subject.balance }.by(-1)
+      expect { subject.touch_out(exit_station) }.to change{ subject.balance }.by(-1)
     end
 
     it 'removes entry station when touch out' do
-      subject.touch_out
       expect(subject.entry_station).to eq nil
+    end
+
+    it 'stores in and out station when touching out' do
+      expect(subject.journeys).to eq({:journey0 => [entry_station, exit_station]})
     end
 
   end
