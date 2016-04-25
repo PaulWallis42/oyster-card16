@@ -5,6 +5,7 @@ describe Oystercard do
 
     let(:entry_station) { double :station }
     let(:exit_station) { double :station }
+    let(:journey) { double :journey }
 
     it 'has a zero balance on creation' do
       expect(subject.balance).to eq Oystercard::DEFAULT_BALANCE
@@ -34,18 +35,6 @@ describe Oystercard do
 
   end
 
-=begin (This test now fails due to being private but is covered in other tests anyway so could be deleted)
-   it { is_expected.to respond_to(:deduct).with(1).argument } #would remove as covered below, reference only
-
-    it 'deducts from the balance' do
-    subject.top_up(Oystercard::BALANCE_LIMIT)
-    subject.deduct(20)
-    expect(subject.balance).to eq 70
-    end
-
-  end
-=end
-
   describe '#touch_in' do
 
     it { is_expected.to respond_to(:touch_in) }
@@ -60,10 +49,10 @@ describe Oystercard do
       expect { subject.touch_in(entry_station) }.to raise_error "You require a min of £#{Oystercard::MINIMUM_FARE} to travel"
     end
 
-    it 'stores the entry station' do
+    it 'starts a journey on touch in' do
       subject.top_up(Oystercard::BALANCE_LIMIT)
       subject.touch_in(entry_station)
-      expect(subject.entry_station).to eq entry_station
+      expect(subject.in_journey?).to eq true
     end
 
   end
@@ -76,6 +65,8 @@ describe Oystercard do
       subject.touch_out(exit_station)
     end
 
+
+
     it { is_expected.to respond_to(:touch_out) }
 
     it 'after touching out, card shows it is not in use' do
@@ -83,15 +74,15 @@ describe Oystercard do
     end
 
     it 'deducts fare from the balance' do
-      expect { subject.touch_out(exit_station) }.to change{ subject.balance }.by(-1)
+      expect(subject.balance).to eq 89
     end
 
     it 'removes entry station when touch out' do
-      expect(subject.entry_station).to eq nil
+      expect(subject.in_journey?).to eq false
     end
 
     it 'stores in and out station when touching out' do
-      expect(subject.journeys).to eq({:journey0 => [entry_station, exit_station]})
+      expect(subject.journeys).not_to be_empty
     end
 
   end
