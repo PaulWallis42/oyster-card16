@@ -65,8 +65,6 @@ describe Oystercard do
       subject.touch_out(exit_station)
     end
 
-
-
     it { is_expected.to respond_to(:touch_out) }
 
     it 'after touching out, card shows it is not in use' do
